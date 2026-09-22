@@ -8,6 +8,17 @@ function replaceOnce(code,anchor,replacement){
 export function patchTouchAsset(name,code,runtime){
   if(code.includes(TOUCH_MARKER))throw new Error('Expected unpatched UI asset');
   if(name==='lib/client.js'||name==='runtime/electron-helper/shared-core.js'){
+    // Translate presentation only; leaf.anim and event keys remain stable IDs.
+    const labels={
+      'fatfish-dialogue-happy':'开心跃动','fatfish-dialogue-shy':'害羞惊讶',
+      'fatfish-dialogue-angry':'傲娇生气','fatfish-dialogue-wave':'元气挥手',
+      'fatfish-dialogue-relaxed':'伸个懒腰','fatfish-dialogue-bow':'屈膝行礼',
+      'fatfish-working-code':'写代码','fatfish-working-notes':'轻快记录','fatfish-working-tokens':'吃Token',
+      'fatfish-attention-angry':'傲娇催促','fatfish-attention-wave':'挥手招呼'
+    };
+    code=replaceOnce(code,'const EVENT_LABELS = {','const EVENT_LABELS = {\n\tfatfishDialogue: "对话表情",');
+    code=replaceOnce(code,'const leaf = (anim) => ({\n\tlabel: anim,',
+      'const FATFISH_MENU_LABELS = '+JSON.stringify(labels)+';\nconst leaf = (anim) => ({\n\tlabel: Object.hasOwn(FATFISH_MENU_LABELS,anim) ? FATFISH_MENU_LABELS[anim] : anim,');
     const from=code.indexOf('async function sendChat('),to=code.indexOf('\n}',from)+2;
     if(from<0||to<from)throw Error('Chat transport boundary missing');
     const chat=code.slice(from,to);

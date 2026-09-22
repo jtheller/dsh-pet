@@ -4,7 +4,7 @@
 
 本 fork 在原作基础上增加面向 **JetBrains Air / Windows** 的工作陪伴：真实工作状态与输入催促、并行任务合并完成报告、一次性“下个完成叫我”、自然语言动作与表情、核实后的 Codex 用量/额度提示，以及触屏和多屏适配。复用作者的角色动画、设置、模型接入和物理交互。
 
-**[下载首版](https://github.com/jtheller/dsh-pet/releases/tag/air-v0.1.0) · [安装与撤销](integrations/jetbrains-air/docs/INSTALL.md) · [扩展说明](integrations/jetbrains-air/README.md)**
+**[下载最新版](https://github.com/jtheller/dsh-pet/releases/tag/air-v0.1.1) · [安装与撤销](integrations/jetbrains-air/docs/INSTALL.md) · [扩展说明](integrations/jetbrains-air/README.md)**
 
 首版固定适配 dsh-pet **0.2.11** / DSH **0.1.5-rc.1**；Air 扩展源码、测试与精简文档集中在 `integrations/jetbrains-air`。原版安装命令本身不包含 Air 扩展。完成/用量当前以 Codex 为主，其他 Agent 能力及已知限制见扩展说明。
 
