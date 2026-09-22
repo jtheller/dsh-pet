@@ -1,14 +1,14 @@
-# Fatfish for JetBrains Air
+# Fatfish Air · 肥鱼桌宠 for JetBrains Air
 
-让肥鱼陪你在 Air 里工作：跟随任务状态、在需要输入时催你、完成后报信，也能用自然语言聊天和做动作。
+面向中文用户，让肥鱼陪你在 JetBrains Air 里工作：跟随任务状态、在需要输入时催你、完成后报信，也能用自然语言聊天和做动作。
 
-这是 [jtheller/dsh-pet](https://github.com/jtheller/dsh-pet) 的社区扩展，基于 [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)。桌宠、角色动画、设置面板、模型接入和物理交互来自原作；本目录维护 Air 联动及交互适配。与 JetBrains、OpenAI 或 DeepSeek 无官方隶属关系。
+这是 [jtheller/fatfish-air](https://github.com/jtheller/fatfish-air) 的社区扩展，基于 [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)。桌宠、角色动画、设置面板、模型接入和物理交互来自原作；本目录维护 Air 联动及交互适配。与 JetBrains、OpenAI 或 DeepSeek 无官方隶属关系。
 
 ## 安装
 
 首版支持 **Windows x64、Node.js 22+、dsh-pet 0.2.11、DSH 0.1.5-rc.1**。Air 联动使用本地日志；Codex 支持完成事件与用量，其他 Agent 目前只提供可观察到的工作/输入状态。
 
-从 [Releases](https://github.com/jtheller/dsh-pet/releases) 下载 `fatfish-air-0.1.1-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
+从 [Releases](https://github.com/jtheller/fatfish-air/releases) 下载 `fatfish-air-0.1.1-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
 
 当前版本 **0.1.1**：桌面/Web 动画菜单采用中文名称，动作与自定义名称回退保持原样。
 

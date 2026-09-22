@@ -1,15 +1,28 @@
+# Fatfish Air · 肥鱼桌宠 for JetBrains Air
+
+**让 Air 干活，让肥鱼陪你。需要你时招招手，忙完了回来叫你。**
+
+面向中文用户的 Windows 桌面宠物：把 JetBrains Air 的工作状态、输入提醒和 Codex 用量带到桌面，再加一点聊天、表情和摸鱼陪伴。基于 [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet) 的社区 fork。
+
+**[下载最新版](https://github.com/jtheller/fatfish-air/releases/latest) · [安装 / 升级 / 撤销](integrations/jetbrains-air/docs/INSTALL.md) · [功能与限制](integrations/jetbrains-air/README.md)**
+
+| Air 在忙 | 需要你回来 | 任务忙完了 |
+| :---: | :---: | :---: |
+| <img src="dsh-pet/assets/preview/gongzuozhuangtai-manglu-dianan.gif" width="160" alt="肥鱼工作动画：忙碌点按"> | <img src="dsh-pet/assets/preview/gongzuozhuangtai-yuandi-duobu-zhangwang.gif" width="160" alt="肥鱼等待动画：原地踱步张望"> | <img src="dsh-pet/assets/preview/gongzuozhuangtai-queyue-qingzhu.gif" width="160" alt="肥鱼完成动画：雀跃庆祝"> |
+
+*上图为原作者提供的动画预览，用于说明工作、等待和完成场景；不是 Air 联动实机录屏。实际播放受配置与当前状态影响。*
+
+- **不用一直盯着 Air**：任务运行时跟着忙，需要输入时催你；默认等已观察任务都空闲后合并报信，点击收起。
+- **中文聊得来，也能托付一句**：“接下来谁先完成就叫我”“先离开一会儿”“别走”。动作和台词由模型理解，保留原作人设和表情。
+- **用量有依据，桌面能上手**：核对账号后显示可用的 Codex 额度窗口；支持触屏拖动、原版甩飞和中文动画菜单。
+
+当前支持 **Windows x64 · Node.js 22+ · dsh-pet 0.2.11 · DSH 0.1.5-rc.1**。这是需要先安装原版的扩展，下载包不是独立 EXE；完成和用量以 Codex 为主，其他 Agent 能力有限。自动互动会使用 DSH 当前模型并产生用量，详情见[互动规则](integrations/jetbrains-air/docs/INTERACTION.md)与[数据说明](integrations/jetbrains-air/docs/PRIVACY.md)。
+
+感谢 **PC2005-cloud** 提供桌宠、角色动画、素材链和基础交互。保留原作 MIT 许可与版权声明；Air 适配由社区维护，与 JetBrains、OpenAI、DeepSeek 无官方隶属关系。下面完整保留原作者 README；其中 npm 徽章、安装命令和统计属于原作，Air 扩展请使用上面的入口。
+
+---
+
 # dsh-pet 🐾
-
-## JetBrains Air 社区集成版
-
-本 fork 在原作基础上增加面向 **JetBrains Air / Windows** 的工作陪伴：真实工作状态与输入催促、并行任务合并完成报告、一次性“下个完成叫我”、自然语言动作与表情、核实后的 Codex 用量/额度提示，以及触屏和多屏适配。复用作者的角色动画、设置、模型接入和物理交互。
-
-**[下载最新版](https://github.com/jtheller/dsh-pet/releases/tag/air-v0.1.1) · [安装与撤销](integrations/jetbrains-air/docs/INSTALL.md) · [扩展说明](integrations/jetbrains-air/README.md)**
-
-首版固定适配 dsh-pet **0.2.11** / DSH **0.1.5-rc.1**；Air 扩展源码、测试与精简文档集中在 `integrations/jetbrains-air`。原版安装命令本身不包含 Air 扩展。完成/用量当前以 Codex 为主，其他 Agent 能力及已知限制见扩展说明。
-
-感谢 **[PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)** 提供原作及动画素材，保留原 MIT 许可与版权声明。Air 集成由社区维护，与 JetBrains、OpenAI、DeepSeek 无官方隶属关系。下方保留作者原有介绍与文档。
-
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-pet"><img alt="npm version" src="https://img.shields.io/npm/v/dsh-pet?label=npm&color=blue"></a>
