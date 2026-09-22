@@ -1,4 +1,5 @@
 import {installInputOverlay} from './input-overlay.mjs';
+import {installDesktopHealth} from './desktop-health.mjs';
 import {fatfishWorkView,fatfishCalmWaiting,fatfishWorkMetadata,fatfishExpressionClip} from './touch.mjs';
 export const TOUCH_MARKER='// FATFISH TOUCH v1';
 function replaceOnce(code,anchor,replacement){
@@ -121,6 +122,9 @@ export function patchTouchAsset(name,code,runtime){
   }
   if(name==='runtime/electron-helper/preload.js')return TOUCH_MARKER+'\n'+replaceOnce(code,"contextBridge.exposeInMainWorld('petBridge', {","contextBridge.exposeInMainWorld('petBridge', {\n  updateInputRegions(payload) { ipcRenderer.send('fatfish:input-regions',payload); },\n  routeOverlayInput(payload) { ipcRenderer.send('fatfish:overlay-input',payload); },\n  onOverlayCursor(callback) { const listener=(_,cursor)=>callback(cursor);ipcRenderer.on('fatfish:overlay-cursor',listener);return ()=>ipcRenderer.removeListener('fatfish:overlay-cursor',listener); },\n  onOverlayInput(callback) { const listener=(_,payload)=>callback(payload);ipcRenderer.on('fatfish:overlay-input',listener);return ()=>ipcRenderer.removeListener('fatfish:overlay-input',listener); },\n  getTouchFrame() { return ipcRenderer.sendSync('fatfish:touch-frame'); },\n  setTouchEnabled(enabled) { ipcRenderer.send('fatfish:touch-enabled', enabled === true); },\n  getTouchViewport() { return ipcRenderer.invoke('fatfish:touch-viewport'); },");
   if(name==='runtime/electron-helper/main.js'){
+    code=replaceOnce(code,'function createPetWindows() {',`const fatfishWatchWindow=(${installDesktopHealth.toString()})({app,readFileSync,writeFileSync,logPath:path.join(app.getPath('userData'),'fatfish-window-health.jsonl'),raiseInput:win=>fatfishInputOverlay.raise(win)});
+function createPetWindows() {`);
+    code=replaceOnce(code,"    win.setAlwaysOnTop(true, 'screen-saver');","    fatfishWatchWindow(win,pet.id);\n    win.setAlwaysOnTop(true, 'screen-saver');");
     code=replaceOnce(code,'const windowIgnore = new Map();',`const windowIgnore = new Map();
 const fatfishTouchWindows = new WeakSet();
 const fatfishInputOverlay=(${installInputOverlay.toString()})({BrowserWindow,ipcMain,windows,setWindowIgnore,preload:path.join(__dirname,'preload.js')});

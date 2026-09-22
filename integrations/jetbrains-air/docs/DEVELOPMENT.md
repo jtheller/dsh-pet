@@ -9,6 +9,7 @@
 | `src/theater.mjs`、`visibility.mjs` | 模型工具协议、延迟动作、原配置显示链 |
 | `src/attention.mjs`、`usage-monitor.mjs`、`companion.mjs` | 生命周期、用量事件和提醒约定 |
 | `src/codex-quota.mjs` | 独立授权、身份核对、只读额度 |
+| `src/desktop-health.mjs` | 窗口层级维护、渲染器退出恢复和有界诊断 |
 | `src/touch.mjs`、`input-overlay.mjs` | 共用展示、触控和 Windows 输入区域 |
 | `src/patch.mjs`、`touch-patch.mjs` | 固定上游成品的宿主与 UI 适配 |
 | `scripts` | 可复现依赖准备、安装/撤销、配置和验证 |

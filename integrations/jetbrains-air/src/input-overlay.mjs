@@ -41,17 +41,20 @@ export function installInputOverlay({BrowserWindow,ipcMain,windows,setWindowIgno
       // mouse-down after a menu/chat hide-show cycle on Windows (WM_MOUSEACTIVATE).
       // showInactive avoids stealing focus on updates; a real press below hands
       // keyboard focus back to the pet, which owns menus, chat and Escape.
-      const overlay=new BrowserWindow({...b,show:false,frame:false,transparent:true,hasShadow:false,resizable:false,skipTaskbar:true,focusable:true,parent:win,webPreferences:{preload,contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
+      // Keep this a sibling: Windows owner/owned z-order can leave the pet below
+      // ordinary apps while raising only its input child. Lifecycle is paired below.
+      const overlay=new BrowserWindow({...b,show:false,frame:false,transparent:true,hasShadow:false,resizable:false,skipTaskbar:true,focusable:true,webPreferences:{preload,contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
       state={overlay,ready:false,panelOpen:false,shape:'',bounds:'',pointers:new Set(),pendingShape:null};overlays.set(win,state);owners.set(overlay,win);
-      const onMove=()=>sync(win),onShow=()=>{if(!overlay.isDestroyed()&&state.ready&&!state.panelOpen)overlay.showInactive();},onHide=()=>{state.pointers.clear();if(!overlay.isDestroyed())overlay.hide();};
-      const recover=()=>{if(overlays.get(win)!==state)return;for(const [type,fn] of [['move',onMove],['resize',onMove],['show',onShow],['hide',onHide],['closed',recover]])win.removeListener(type,fn);owners.delete(overlay);overlays.delete(win);if(!win.isDestroyed())setWindowIgnore(win,false);if(!overlay.isDestroyed())overlay.destroy();};
+      const onMove=()=>sync(win),onShow=()=>{if(!overlay.isDestroyed()&&state.ready&&!state.panelOpen&&win.isVisible()&&!win.isMinimized())overlay.showInactive();},onHide=()=>{state.pointers.clear();if(!overlay.isDestroyed())overlay.hide();};
+      const recover=()=>{if(overlays.get(win)!==state)return;for(const [type,fn] of [['move',onMove],['resize',onMove],['show',onShow],['hide',onHide],['minimize',onHide],['restore',onShow],['closed',recover]])win.removeListener(type,fn);owners.delete(overlay);overlays.delete(win);if(!win.isDestroyed())setWindowIgnore(win,false);if(!overlay.isDestroyed())overlay.destroy();};
       overlay.webContents.once('render-process-gone',recover);
       overlay.once('closed',recover);
-      overlay.setAlwaysOnTop(true,'screen-saver');
+      if(!overlay.isAlwaysOnTop())overlay.setAlwaysOnTop(true,'screen-saver');
+      overlay.moveTop();
       overlay.webContents.setWindowOpenHandler(()=>({action:'deny'}));
       overlay.webContents.on('will-navigate',e=>e.preventDefault());
-      overlay.webContents.once('did-finish-load',()=>{state.ready=true;sync(win);overlay.webContents.send('fatfish:overlay-cursor',state.cursor||'grab');setWindowIgnore(win,false);if(win.isVisible()&&!state.panelOpen)overlay.showInactive();});
-      win.on('move',onMove);win.on('resize',onMove);win.on('show',onShow);win.on('hide',onHide);win.once('closed',recover);
+      overlay.webContents.once('did-finish-load',()=>{state.ready=true;sync(win);overlay.webContents.send('fatfish:overlay-cursor',state.cursor||'grab');setWindowIgnore(win,false);onShow();});
+      win.on('move',onMove);win.on('resize',onMove);win.on('show',onShow);win.on('hide',onHide);win.on('minimize',onHide);win.on('restore',onShow);win.once('closed',recover);
       overlay.loadURL('data:text/html;charset=utf-8,'+encodeURIComponent(html)).catch(recover);
     }
     const opening=payload.panelOpen&&!state.panelOpen;
@@ -60,7 +63,7 @@ export function installInputOverlay({BrowserWindow,ipcMain,windows,setWindowIgno
     const shape=JSON.stringify(rects);
     if(shape!==state.shape){if(state.pointers.size)state.pendingShape={rects,shape};else{state.overlay.setShape(rects);state.shape=shape;state.pendingShape=null;}}else state.pendingShape=null;
     sync(win);setWindowIgnore(win,false);
-    if(state.panelOpen){state.overlay.hide();if(opening&&win.isVisible())win.focus();}else if(state.ready&&win.isVisible()&&!state.overlay.isVisible())state.overlay.showInactive();
+    if(state.panelOpen){state.overlay.hide();if(opening&&win.isVisible())win.focus();}else if(state.ready&&win.isVisible()&&!win.isMinimized()&&!state.overlay.isVisible())state.overlay.showInactive();
   });
   ipcMain.on('fatfish:overlay-input',(event,data)=>{
     const overlay=BrowserWindow.fromWebContents(event.sender),win=owners.get(overlay);
@@ -79,5 +82,12 @@ export function installInputOverlay({BrowserWindow,ipcMain,windows,setWindowIgno
       if(state&&!state.pointers.size&&state.pendingShape){state.overlay.setShape(state.pendingShape.rects);state.shape=state.pendingShape.shape;state.pendingShape=null;}
     }
   });
-  return {ignore(win){const state=overlays.get(win);return state?.ready?!state.panelOpen:null;}};
+  return {
+    ignore(win){const state=overlays.get(win);return state?.ready?!state.panelOpen:null;},
+    raise(win){
+      const state=overlays.get(win),overlay=state?.overlay;
+      if(!state?.ready||state.panelOpen||!overlay||overlay.isDestroyed()||!overlay.isVisible()||overlay.isMinimized())return;
+      overlay.setAlwaysOnTop(true,'screen-saver');
+    }
+  };
 }

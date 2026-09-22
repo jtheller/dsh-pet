@@ -12,6 +12,7 @@ test('input overlay restricts only input, relays screen coordinates, and follows
     setContentBounds(b){this.bounds=b;}setShape(rects){this.shapes.push(rects);}
     isVisible(){return this.visible;}showInactive(){this.visible=true;}hide(){this.visible=false;}
     focus(){this.focusCount=(this.focusCount||0)+1;}
+    isMinimized(){return false;}isAlwaysOnTop(){return true;}moveTop(){this.raiseCount=(this.raiseCount||0)+1;}
     setAlwaysOnTop(){}loadURL(){return Promise.resolve();}
     destroy(){this.destroyed=true;this.emit('closed');}
   }
@@ -23,8 +24,13 @@ test('input overlay restricts only input, relays screen coordinates, and follows
   handlers['fatfish:input-regions'](event,payload);
   const overlay=created[1];overlay.webContents.emit('did-finish-load');
   assert.equal(overlay.options.focusable,true,'Windows must be able to activate a real press after chat closes');
+  assert.equal(overlay.options.parent,undefined,'independent native z-order, paired lifecycle in the adapter');
   assert.equal(overlay.options.skipTaskbar,true);assert.equal(overlay.focusCount,undefined,'showing the input layer must not proactively take focus');
   assert.equal(router.ignore(win),true);assert.equal(overlay.visible,true);
+  router.raise(win);assert.equal(overlay.raiseCount,1);assert.equal(overlay.focusCount,undefined);
+  win.isMinimized=()=>true;win.emit('minimize');assert.equal(overlay.visible,false);
+  handlers['fatfish:input-regions'](event,payload);assert.equal(overlay.visible,false,'polling must not revive a minimized input window');
+  win.isMinimized=()=>false;win.emit('restore');assert.equal(overlay.visible,true);
   assert.deepEqual(overlay.shapes,[[{x:300,y:150,width:180,height:240}]]);assert.deepEqual(win.shapes,[]);
   handlers['fatfish:input-regions'](event,payload);assert.equal(overlay.shapes.length,1,'unchanged region is not reset');
   win.bounds={...win.bounds,x:50};win.emit('move');assert.equal(overlay.bounds.x,50);
@@ -32,6 +38,7 @@ test('input overlay restricts only input, relays screen coordinates, and follows
   const routed=sent.find(([channel])=>channel==='fatfish:overlay-input')[1];assert.equal(routed.screenX,380);assert.equal(routed.clientX,220);
   handlers['fatfish:input-regions'](event,{...payload,panelOpen:true});assert.equal(router.ignore(win),false);assert.equal(overlay.visible,false);
   assert.equal(win.focusCount,1);
+  router.raise(win);assert.equal(overlay.raiseCount,1,'chat/menu input layer remains hidden');
   handlers['fatfish:input-regions'](event,{...payload,panelOpen:true,cursor:'grabbing'});assert.equal(win.focusCount,1);
   assert.ok(sent.some(([channel,cursor])=>channel==='fatfish:overlay-cursor'&&cursor==='grabbing'));
   handlers['fatfish:input-regions'](event,payload);assert.equal(router.ignore(win),true);
