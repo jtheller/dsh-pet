@@ -1,0 +1,32 @@
+{
+  "name": "fatfish-air",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Community JetBrains Air integration for dsh-pet on Windows",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "audit:upstream": "node scripts/audit-upstream.mjs --test",
+    "install:local": "node scripts/install.mjs",
+    "uninstall:local": "node scripts/install.mjs --undo",
+    "status": "node scripts/install.mjs --status && node scripts/install-touch.mjs --status",
+    "install:touch": "node scripts/install-touch.mjs",
+    "uninstall:touch": "node scripts/install-touch.mjs --undo",
+    "prepare:upstream": "node scripts/prepare-upstream.mjs",
+    "pretest": "node scripts/prepare-test.mjs",
+    "test:install": "node scripts/test-install.mjs",
+    "configure:animations": "node scripts/configure-work-animations.mjs && node scripts/configure-attention.mjs && node scripts/configure-dialogue-animations.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jtheller/dsh-pet.git",
+    "directory": "integrations/jetbrains-air"
+  }
+}
