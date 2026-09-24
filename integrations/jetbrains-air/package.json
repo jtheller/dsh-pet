@@ -18,7 +18,9 @@
     "prepare:upstream": "node scripts/prepare-upstream.mjs",
     "pretest": "node scripts/prepare-test.mjs",
     "test:install": "node scripts/test-install.mjs",
-    "configure:animations": "node scripts/configure-work-animations.mjs && node scripts/configure-attention.mjs && node scripts/configure-dialogue-animations.mjs"
+    "configure:animations": "node scripts/configure-work-animations.mjs && node scripts/configure-attention.mjs && node scripts/configure-dialogue-animations.mjs",
+    "configure:persona": "node scripts/configure-persona.mjs",
+    "restore:persona": "node scripts/configure-persona.mjs --undo"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"

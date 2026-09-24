@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {FATFISH_PERSONA} from '../src/persona.mjs';
 import {buildPatch} from '../src/patch.mjs';
 import {patchTouchAsset} from '../src/touch-patch.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
@@ -44,7 +45,23 @@ try{
   const configured=readFileSync(config,'utf8');assert.equal(JSON.parse(configured).sentinel,'keep');assert.deepEqual(JSON.parse(configured).pets,[{id:'main',display:'desktop'}]);assert.ok(JSON.parse(configured).animations.idle);
   for(const script of ['configure-work-animations.mjs','configure-attention.mjs','configure-dialogue-animations.mjs'])run(script);
   assert.equal(readFileSync(config,'utf8'),configured);
+  // Persona setup preserves unrelated fields and restores absence or a custom prompt.
+  for(const previous of [undefined,'自定义旧人设']){
+    const before={...JSON.parse(configured),...(previous===undefined?{}:{whisperPrompt:previous})};
+    writeFileSync(config,JSON.stringify(before));
+    run('configure-persona.mjs');
+    const applied=readFileSync(config,'utf8');
+    assert.deepEqual(JSON.parse(applied),{...before,whisperPrompt:FATFISH_PERSONA});
+    run('configure-persona.mjs');assert.equal(readFileSync(config,'utf8'),applied);
+    writeFileSync(config,JSON.stringify({...JSON.parse(applied),sentinel:'later setting',whisperPrompt:'later persona'}));
+    const edited=readFileSync(config,'utf8');
+    run('configure-persona.mjs',[],false);run('configure-persona.mjs',['--undo'],false);
+    assert.equal(readFileSync(config,'utf8'),edited);
+    writeFileSync(config,JSON.stringify({...JSON.parse(applied),sentinel:'later setting'}));
+    run('configure-persona.mjs',['--undo']);
+    assert.deepEqual(JSON.parse(readFileSync(config,'utf8')),{...before,sentinel:'later setting'});
+  }
   run('install-touch.mjs',['--undo']);run('install.mjs',['--undo']);
   for(const name of names)assert.deepEqual(readFileSync(join(target,name)),readFileSync(join(release,name)),'Uninstall did not restore '+name);
-  console.log('PASS: clean install, eight expected patches, repeat install, status, external-edit rejection, animation setup and byte-exact uninstall in isolated DSH_HOME.');
+  console.log('PASS: clean install, eight expected patches, repeat install, status, external-edit rejection, animation/persona setup, field-only persona restoration and byte-exact uninstall in isolated DSH_HOME.');
 }finally{rmSync(sandbox,{recursive:true,force:true});}

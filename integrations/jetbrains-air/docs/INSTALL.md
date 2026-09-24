@@ -21,6 +21,7 @@ npm run prepare:upstream
 npm run install:local
 npm run install:touch
 npm run configure:animations
+npm run configure:persona
 npm run status
 ```
 
@@ -28,7 +29,9 @@ npm run status
 
 动画配置命令复用原素材，为工作、等待输入和对话表情建立独立别名，备份原配置并更新对应槽位；不添加新生成素材。要求原版已初始化 `main-config.json`。已有自定义工作/等待动画时，请先备份配置，或跳过此命令继续使用原动画；六种新增对话表情需要此配置。
 
-默认使用当前用户的 `.dsh`。自定义安装可先设置 `$env:DSH_HOME`，安装器与动画工具使用同一根目录。
+人设配置命令将肥鱼的原文角色口诀写入用户配置的 `whisperPrompt`，聊天、碎碎念和 Air 报信共用；首次执行备份原配置，重复执行不重复覆盖。已有自定义人设也会被本命令替换，可跳过此命令保留。人设作用于口吻，不改变工具协议、真实状态或超时取消。主配置中的其他宠物也可能继承此人设，独立种类配置可自行覆盖。
+
+默认使用当前用户的 `.dsh`。自定义安装可先设置 `$env:DSH_HOME`，安装器、动画和人设工具使用同一根目录。
 
 ## 启动与可选额度连接
 
@@ -50,15 +53,22 @@ Air 工作状态无需额外模型账号连接。要显示 Codex 额度，在 Ai
 
 退出 DSH，将新版 ZIP 中的文件覆盖到原扩展目录，**保留原目录的 `.local` 安装清单和恢复原件**。然后运行 `npm run prepare:upstream`、`npm run install:touch`、`npm run status`，重新启动 DSH 并刷新 Web。0.1.2 更新桌面窗口恢复与层级维护，不需要重新配置动画或账号。不要删除旧目录后再安装到新路径。
 
+## 源码新增：肥鱼人设（尚未发布）
+
+已有安装可在更新仓库后运行 `npm run install:local` 和 `npm run configure:persona`，再重启 DSH。前者更新自动报信口吻，后者应用原文人设；无需重配动画或账号。
+
 ## 更新与撤销
 
 先退出 DSH，再执行：
 
 ```powershell
+npm run restore:persona # 仅在执行过 configure:persona 时使用
 npm run uninstall:touch
 npm run uninstall:local
 ```
 
-随后重新启动 DSH 并刷新 Web。两个撤销命令恢复原版成品；不会删除模型配置、聊天记忆、动画别名或独立授权。动画修改前的配置备份在 `.local/before-*-config-*.json`，需要撤销动画时只恢复对应槽位，避免覆盖后来配置。
+`restore:persona` 只恢复安装前的人设字段，保留其他设置；如果人设之后被手动修改，会拒绝覆盖。完整备份位于 `.local/before-persona-config-*.json`，恢复记录为 `.local/persona-installation.json`。
+
+随后重新启动 DSH 并刷新 Web。两个卸载命令恢复原版成品；不会删除模型配置、聊天记忆、动画别名或独立授权。动画修改前的配置备份在 `.local/before-*-config-*.json`，需要撤销动画时只恢复对应槽位，避免覆盖后来配置。
 
 只有通过本扩展启动的默认服务才使用 `stop-pet.ps1` 关闭；它会中断对应 DSH 会话。若发现“changed externally”或版本不符，停止操作并核对来源，不要删除安装记录强行覆盖。独立额度授权的存储说明见[数据与授权](PRIVACY.md)。

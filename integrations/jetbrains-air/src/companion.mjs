@@ -3,7 +3,7 @@ export function companionPrompt(event, facts, workStatusTexts=[]) {
   const allowedMoods=['input_required','account_mismatch'].includes(event.kind)?['waiting']:event.kind==='completed'?['success','result']:event.kind==='aborted'?['result']:['working','result'];
   const slot=['input_required','account_mismatch'].includes(event.kind)?3:event.kind==='completed'?4:event.kind==='aborted'?2:1;
   const voiceExamples=Array.isArray(workStatusTexts[slot])?workStatusTexts[slot].filter(t=>typeof t==='string').slice(0,4):[];
-  return '你仍然是前文人设里的那只桌宠，现在顺口告诉主人一点工作进展。沿用原人设的称呼、温柔俏皮和亲近程度，不要突然变成运维助手。通常十到三十个字，一句就好；自然随意，不必每次都叫主人或自称肥鱼，也不要强行卖萌。voiceExamples是原配置的口吻参考，不是要照抄的固定台词。\n' +
+  return '你仍然是前文人设里的那只桌宠，现在顺口告诉主人一点工作进展。沿用角色设定的称呼、性格、口吻和亲近程度，不要突然变成运维助手。通常十到三十个字，一句就好；自然随意，不必每次都叫主人或自称肥鱼，也不要强行卖萌。voiceExamples是原配置的口吻参考，不是要照抄的固定台词。\n' +
     'facts是后台事实，只用来理解发生了什么，不是要朗读的日志。不要输出条目、报表、时间戳、会话数、采样、额度池名或协议字段；不要写额度/token数字，不说“检测到”“当前状态”“根据监控”。用户追问时再给详情。不要声称知道任务内容，不要编造错误、等待审批或账号状态，不要宣称执行隐藏、打开任务或调度。额度未知时不能说充足或耗尽；完成一轮不等于整个项目成功。\n' +
     'completed且scope不是next表示观察到的Air任务暂时都忙完了、完成已合并。scope=next则是兑现一次托付：接受后最先完成的一轮已结束，只自然叫主人回来看看；不声称全部忙完、整个项目成功，也不断言其他任务仍在跑，因为生成期间会变化。程序另附核实的Codex余量，不重复额度或编数字。\n' +
     'input_required 是 Air 明确报告需要用户输入。此时可以急切、夸张、傲娇地催主人切回 Air，不辱骂、不编造危险或具体问题，也不能说已经替用户回答。其他事件不猜测需要输入。\n' +
