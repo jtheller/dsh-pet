@@ -1,4 +1,12 @@
 // Dedicated official app-server auth. Never use ~/.codex credentials or Air tokens.
+export function quotaResetText(resetsAt,now=Date.now()){
+  if(!Number.isFinite(resetsAt)||resetsAt<=0||resetsAt*1000<=now)return '重置时间未知';
+  const remaining=resetsAt*1000-now;
+  if(remaining<60000)return '不到1分钟后重置';
+  const minutes=Math.ceil(remaining/60000),days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60),rest=minutes%60;
+  const duration=[days?`${days}天`:'',hours?`${hours}小时`:'',rest?`${rest}分钟`:''].join('');
+  return `约${duration}后重置`;
+}
 export function matchAirAccount(air,identity){
   if(!air?.accountId||!air?.userId)return 'air_unknown';
   if(!identity?.accountId||!identity?.userIds?.length)return 'identity_unknown';
@@ -57,7 +65,7 @@ export function createCodexQuota({spawn,fs,join,root,airFile,exe,env,now=Date.no
     const codex=s.buckets.find(b=>b.id==='codex');
     for(const [minutes,label] of [[300,'5小时'],[10080,'7天']]){
       const w=[codex?.primary,codex?.secondary].find(w=>w?.windowMinutes===minutes&&(!w.resetsAt||w.resetsAt>now()/1000));
-      lines.push(w?`${label}：已用 ${w.usedPercent}%，剩余 ${Math.max(0,100-w.usedPercent)}%`:`${label}：未知，接口没有当前对应读数`);
+      lines.push(w?`${label}：已用 ${w.usedPercent}%，剩余 ${Math.max(0,100-w.usedPercent)}%；${quotaResetText(w.resetsAt,now())}`:`${label}：未知，接口没有当前对应读数`);
     }
     return lines.join('\n');
   }

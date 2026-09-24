@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {matchAirAccount,quotaBuckets,createCodexQuota} from '../src/codex-quota.mjs';
+import {matchAirAccount,quotaBuckets,createCodexQuota,quotaResetText} from '../src/codex-quota.mjs';
 
 test('account equality requires account and user identity; reserve is never ordinary quota',()=>{
   assert.equal(matchAirAccount({accountId:'a',userId:'u'},{accountId:'a',userIds:['u']}),'matched');
@@ -13,7 +13,7 @@ test('account equality requires account and user identity; reserve is never ordi
   assert.equal(buckets[0].id,'base_model_inference');assert.equal(buckets[1].primary,null);
 });
 
-function harness(){
+function harness(limits){
  let air={type:'has_account',account:{accountId:'a',userId:'u',email:'air@example.test'}},clock=1000000,auth=false,authorized='a',calls=[],children=[],mismatches=[];
  const token=()=>Buffer.from(JSON.stringify({sub:'u',email:'web@example.test','https://api.openai.com/auth':{chatgpt_account_id:authorized,chatgpt_user_id:'u'}})).toString('base64url');
  const files={existsSync:()=>auth,mkdirSync(){},readFileSync(file){return JSON.stringify(file==='air'?air:{tokens:{account_id:authorized,id_token:'x.'+token()+'.secret'}});}};
@@ -22,7 +22,7 @@ function harness(){
    const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();child.stdin=new EventEmitter();child.stdin.write=(line,cb)=>{const m=JSON.parse(line);calls.push(m.method);if(!m.id)return;
      let result={};if(m.method==='account/read')result={account:{type:'chatgpt',email:'web@example.test'}};
      if(m.method==='account/login/start')result={loginId:'login',authUrl:'https://auth.openai.com/authorize?state=private'};
-     if(m.method==='account/rateLimits/read')result={rateLimitsByLimitId:{codex:{limitId:'codex',primary:{usedPercent:27,windowDurationMins:300,resetsAt:9999999},secondary:{usedPercent:8,windowDurationMins:10080,resetsAt:9999999}}}};
+     if(m.method==='account/rateLimits/read')result={rateLimitsByLimitId:{codex:limits??{limitId:'codex',primary:{usedPercent:27,windowDurationMins:300,resetsAt:9999999},secondary:{usedPercent:8,windowDurationMins:10080,resetsAt:9999999}}}};
      queueMicrotask(()=>{child.stdout.emit('data',Buffer.from(JSON.stringify({id:m.id,result})+'\n'));cb?.();});
    };child.kill=()=>child.emit('exit');children.push(child);return child;
  }});
@@ -60,4 +60,21 @@ test('completion waits for an overlapping refresh; concise numbers remain accoun
    h.advance(300001);assert.doesNotMatch(h.q.completionSummary(),/73|92|100%/);assert.match(h.q.completionSummary(),/未知/);
    h.setAir({type:'has_account',account:{accountId:'other',userId:'u'}});assert.match(h.q.completionSummary(),/不一致/);
  }finally{h.q.dispose();}
+});
+
+test('quota queries show separate live countdowns, never invent a reset for missing or expired data',async()=>{
+ const h=harness({limitId:'codex',primary:{usedPercent:30,windowDurationMins:300,resetsAt:1000+3660},secondary:{usedPercent:76,windowDurationMins:10080,resetsAt:1000+2*86400+3*3600}});
+ try{
+  h.setAuth(true);await h.q.refresh();
+  assert.match(h.q.summary(),/5小时：[^\n]*约1小时1分钟后重置/);
+  assert.match(h.q.summary(),/7天：[^\n]*约2天3小时后重置/);
+  h.advance(60000);assert.match(h.q.summary(),/5小时：[^\n]*约1小时后重置/);
+  h.advance(300001);assert.doesNotMatch(h.q.summary(),/后重置/,'stale reads must not expose a countdown');
+  h.setAir({type:'has_account',account:{accountId:'other',userId:'u'}});assert.doesNotMatch(h.q.summary(),/后重置/);
+ }finally{h.q.dispose();}
+ const missing=harness({limitId:'codex',secondary:{usedPercent:76,windowDurationMins:10080}});
+ try{missing.setAuth(true);await missing.q.refresh();assert.match(missing.q.summary(),/7天：[^\n]*剩余 24%；重置时间未知/);assert.match(missing.q.summary(),/5小时：未知/);}finally{missing.q.dispose();}
+ assert.equal(quotaResetText(1030,1000000),'不到1分钟后重置');
+ assert.equal(quotaResetText(1061,1000000),'约2分钟后重置');
+ for(const value of [null,undefined,NaN,0,999,1000])assert.equal(quotaResetText(value,1000000),'重置时间未知');
 });

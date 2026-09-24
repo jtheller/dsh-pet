@@ -8,9 +8,9 @@
 
 首版支持 **Windows x64、Node.js 22+、dsh-pet 0.2.11、DSH 0.1.5-rc.1**。Air 联动使用本地日志；Codex 支持完成事件与用量，其他 Agent 目前只提供可观察到的工作/输入状态。
 
-从 [Releases](https://github.com/jtheller/fatfish-air/releases) 下载 `fatfish-air-0.1.2-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
+从 [Releases](https://github.com/jtheller/fatfish-air/releases) 下载 `fatfish-air-0.1.3-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
 
-当前版本 **0.1.2**：修复 Windows 窗口层级失步导致的遮挡，补齐渲染器崩溃后的恢复；保留主动隐藏和最小化行为。
+当前版本 **0.1.3**：新增可选肥鱼人设及一键恢复；额度查询可回答距离重置还需多久。
 
 ## 能做什么
 

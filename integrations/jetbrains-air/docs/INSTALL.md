@@ -49,13 +49,11 @@ Air 工作状态无需额外模型账号连接。要显示 Codex 额度，在 Ai
 
 在浏览器里完成独立授权；身份匹配且窗口有效才显示额度。此辅助脚本和 `toggle-pet.ps1` 使用上述启动日志、127.0.0.1 和 3080；自定义端口需要自行调整。授权不是启动桌宠的必要步骤。
 
-## 从 0.1.0 / 0.1.1 更新到 0.1.2
+## 更新到 0.1.3
 
-退出 DSH，将新版 ZIP 中的文件覆盖到原扩展目录，**保留原目录的 `.local` 安装清单和恢复原件**。然后运行 `npm run prepare:upstream`、`npm run install:touch`、`npm run status`，重新启动 DSH 并刷新 Web。0.1.2 更新桌面窗口恢复与层级维护，不需要重新配置动画或账号。不要删除旧目录后再安装到新路径。
+退出 DSH，将新版文件覆盖到原扩展目录，保留 `.local` 安装清单和恢复原件。运行 `npm run prepare:upstream`、`npm run install:local`、`npm run install:touch`、`npm run status`，再启动 DSH。不要删除旧目录后安装到新路径。
 
-## 源码新增：肥鱼人设（尚未发布）
-
-已有安装可在更新仓库后运行 `npm run install:local` 和 `npm run configure:persona`，再重启 DSH。前者更新自动报信口吻，后者应用原文人设；无需重配动画或账号。
+想使用新增肥鱼人设，可在重启前运行 `npm run configure:persona`；已有自定义人设可以跳过。之后可用 `npm run restore:persona` 恢复此前人设，无需重配动画或账号。
 
 ## 更新与撤销
 
