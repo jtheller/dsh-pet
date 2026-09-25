@@ -145,6 +145,7 @@ export function installExpressionUI() {
 
 export function fatfishWorkMetadata(raw) {
   const extra={};
+  if(typeof raw?.fatfishWorkingQuota==='string'&&raw.fatfishWorkingQuota.length<=160)extra.fatfishWorkingQuota=raw.fatfishWorkingQuota;
   if(raw?.fatfishManaged===true)extra.fatfishManaged=true;
   if(typeof raw?.fatfishBubbleMuted==='boolean')extra.fatfishBubbleMuted=raw.fatfishBubbleMuted;
   for(const key of ['fatfishNoticeUntil','fatfishAttentionRevision','fatfishStateRevision','fatfishStateUntil']){
@@ -189,8 +190,14 @@ export function fatfishWorkView(snapshot,memory,now) {
   const until=held?deadline:terminal?memory.terminalUntil:0;
   const acknowledged=state==='waiting'&&attention!=null&&memory.acknowledged===attention;
   return {state,animate,until,task:deadline&&!held?null:snapshot?.task??null,
+    quota:state==='working'&&!held?snapshot?.fatfishWorkingQuota:null,
     visible:!snapshot?.fatfishBubbleMuted&&!acknowledged&&!(dismissed&&(!state||terminal))&&
       (held||!!state&&(!terminal||until>now))};
+}
+
+export function fatfishWorkText(view,fallback){
+  const text=view.task??fallback??null;
+  return view.quota?[text,view.quota].filter(Boolean).join('\n'):text;
 }
 
 export function fatfishCalmWaiting(animations) {
@@ -223,7 +230,7 @@ export function installCompletionBubble() {
       if(memory.until>Date.now()||acknowledged(this)){
         if(this.workTimer!==null)window.clearTimeout(this.workTimer);
         const view=fatfishWorkView(memory.snapshot,memory,Date.now());
-        this.workTimer=null;this.workText=view.task??memory.defaultText??null;this.workOn=view.visible;this.renderBubble();
+        this.workTimer=null;this.workText=fatfishWorkText(view,memory.defaultText);this.workOn=view.visible;this.renderBubble();
       }
     }
     return originalClick.apply(this,args);
@@ -256,13 +263,13 @@ export function installCompletionBubble() {
       const clip=fatfishExpressionClip(expression,this.animations,Date.now(),this.pet.balanceEnabled);
       if(clip&&view.state!=='waiting'&&!this.dragState.active&&!this.dragState.dragging&&this.throwRef==null)this.playOnce(clip);
     }
-    this.workText=view.task??memory.defaultText??null;
+    this.workText=fatfishWorkText(view,memory.defaultText);
     this.workOn=view.visible;
     if(this.workTimer!==null)window.clearTimeout(this.workTimer);
     this.workTimer=null;
     if(view.visible&&view.until>Date.now())this.workTimer=window.setTimeout(()=>{
       const current=fatfishWorkView(memory.snapshot,memory,Date.now());
-      this.workOn=current.visible;this.workText=current.task??memory.defaultText??null;this.renderBubble();
+      this.workOn=current.visible;this.workText=fatfishWorkText(current,memory.defaultText);this.renderBubble();
     },Math.min(300000,view.until-Date.now()));
     this.renderBubble();
   };

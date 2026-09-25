@@ -116,7 +116,9 @@ export function createUsageMonitor({root,io,join,now=Date.now,enabled=true,inter
     // A raw per-turn finish must not independently flash success between queued turns.
     const state=input?.count?'waiting':active?'working':held&&noticeKind==='completed'&&now()-noticeStarted<10000?'success':null;
     const task=input?.count?(attentionTextRevision===input.revision?attentionText:null):held?notice:null;
+    const workingQuota=state==='working'?(quota?.windows?.()||[]).map(w=>`${w.label}还剩 ${Math.round((100-w.usedPercent)*100)/100}%`).join(' · '):'';
     const view={state,task,fatfishManaged:true,fatfishBubbleMuted:!canSpeak(!!input?.count),
+      ...(state==='working'?{fatfishWorkingQuota:workingQuota?'Codex '+workingQuota:'Codex 余量暂时未知'}:{}),
       ...(input?.count?{fatfishAttentionRevision:input.revision}:{}),
       ...(state==='success'?{fatfishStateRevision:noticeStarted,fatfishStateUntil:noticeStarted+10000}:{}),
       ...(held?{fatfishNoticeUntil:noticeUntil}:{}),

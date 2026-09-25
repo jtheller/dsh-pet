@@ -5,6 +5,30 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createUsageMonitor} from '../src/usage-monitor.mjs';
 import {createCompanion} from '../src/companion.mjs';
+import {fatfishWorkView,fatfishWorkText,fatfishWorkMetadata} from '../src/touch.mjs';
+
+test('Air working quota decorates only ordinary work text, preserving notices, state and lifecycle',async t=>{
+ let lifecycle={running:1,count:0,revision:0},windows=[{label:'7天',usedPercent:76}],present=true,speak=true;
+ const f=await fixture(t,'air',{attention:{snapshot:()=>lifecycle},quota:{windows:()=>windows,snapshot:()=>({state:'matched'})},canPresent:()=>present,canSpeak:()=>speak});
+ await f.monitor.poll();const native={state:null,ts:0},memory={defaultText:'我在忙呢'};
+ let snapshot=f.monitor.prefer(native),view=fatfishWorkView(snapshot,memory,f.now());
+ assert.equal(snapshot.state,'working','already-running Air is sufficient');
+ assert.equal(fatfishWorkMetadata(snapshot).fatfishWorkingQuota,'Codex 7天还剩 24%');
+ assert.equal(fatfishWorkText(view,memory.defaultText),'我在忙呢\nCodex 7天还剩 24%');
+ const oldTs=snapshot.ts;windows=[{label:'5小时',usedPercent:12.5},{label:'7天',usedPercent:78}];f.advance(60000);
+ snapshot=f.monitor.prefer(native);view=fatfishWorkView(snapshot,memory,f.now());
+ assert.ok(snapshot.ts>oldTs);assert.equal(view.animate,false);assert.equal(view.until,0);
+ assert.equal(fatfishWorkText(view,memory.defaultText),'我在忙呢\nCodex 5小时还剩 87.5% · 7天还剩 22%');
+ f.monitor.showNotice('下一个做完了','result',300000,null,'next_completed');
+ snapshot=f.monitor.prefer(native);const deadline=snapshot.fatfishNoticeUntil;
+ assert.equal(fatfishWorkText(fatfishWorkView(snapshot,memory,f.now()),memory.defaultText),'下一个做完了');
+ windows=[];f.advance(1000);snapshot=f.monitor.prefer(native);assert.equal(snapshot.fatfishNoticeUntil,deadline);
+ memory.dismissed=deadline;view=fatfishWorkView(snapshot,memory,f.now());assert.equal(fatfishWorkText(view,memory.defaultText),'我在忙呢\nCodex 余量暂时未知');
+ speak=false;assert.equal(fatfishWorkView(f.monitor.prefer(native),memory,f.now()).visible,false,'chat/quiet bubble mute unchanged');speak=true;
+ lifecycle={running:1,count:1,revision:1};snapshot=f.monitor.prefer(native);assert.equal(snapshot.state,'waiting');assert.equal(snapshot.fatfishWorkingQuota,undefined);
+ lifecycle={running:0,count:0,revision:2};f.monitor.clearNotice();snapshot=f.monitor.prefer(native);assert.equal(snapshot.state,null);assert.equal(snapshot.fatfishWorkingQuota,undefined);
+ lifecycle.running=1;present=false;assert.equal(f.monitor.prefer(native),native,'explicit ignore Air unchanged');
+});
 
 test('queued turns defer completion until settled and a new task retires the report for both policies',async t=>{
   for(const mode of ['normal','until_complete']){

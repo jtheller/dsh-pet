@@ -1,6 +1,6 @@
 {
   "name": "fatfish-air",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "肥鱼 Air：面向 JetBrains Air 的 Windows 桌宠，支持任务提醒、中文互动与 Codex 用量/额度提示。",

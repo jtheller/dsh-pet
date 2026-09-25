@@ -5,7 +5,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {chromium} from '@playwright/test';
 import {createCompanion} from '../src/companion.mjs';
-import {installCompletionBubble,installWorkStatusTransport,fatfishWorkMetadata,fatfishWorkView,fatfishCalmWaiting} from '../src/touch.mjs';
+import {installCompletionBubble,installWorkStatusTransport,fatfishWorkMetadata,fatfishWorkText,fatfishWorkView,fatfishCalmWaiting} from '../src/touch.mjs';
 import {patchTouchAsset} from '../src/touch-patch.mjs';
 import {WORKING_POOL,WORKING_ALIASES} from '../scripts/configure-work-animations.mjs';
 const edge='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
@@ -17,31 +17,37 @@ test('actual desktop fetch decoder and polling loop deliver typed metadata and r
     const page=await browser.newPage();await page.clock.install({time:1000000});await page.clock.pauseAt(1001000);
     await page.setContent(readFileSync(join(helper,'index.html'),'utf8').replace(/<meta\b[^>]*>/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
     for(const name of ['shared-core.js','constants.js','sprite.js','events.js'])await page.addScriptTag({path:join(helper,name)});
-    await page.addScriptTag({content:[fatfishWorkMetadata,fatfishWorkView,fatfishCalmWaiting,installWorkStatusTransport].map(f=>f.toString()).join('\n')+`\n(${installCompletionBubble.toString()})();`});
+    await page.addScriptTag({content:[fatfishWorkMetadata,fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,installWorkStatusTransport].map(f=>f.toString()).join('\n')+`\n(${installCompletionBubble.toString()})();`});
     const events=readFileSync(join(helper,'events.js'),'utf8');
     const loop=events.slice(events.indexOf('let workBaseline = null;'),events.indexOf('void workLoop();'));
     const result=await page.evaluate(async loop=>{
       config={physics:S.DEFAULT_PHYSICS};window.petBridge={setBounds(){},setInteractive(){},setInputBusy(){},reportFlight(){}};
       const pet=new PetSprite({id:'main',name:'test',size:240,workStatusEnabled:true,position:{corner:'bottom-right',marginX:20,marginY:20},animations:{idle:['idle'],turn:[],drag:[],clicks:['response'],events:{workStatus:['thinking',['work-a','work-b'],'result',['angry','pace'],'success','error']},moves:{actions:[]}},animationWeights:{}});
-      pet.switchTo=function(name){this.anim=name;};
-      let raw={state:'working',task:null,ts:123,fatfishManaged:true,fatfishBubbleMuted:false};
+      let plays=0;pet.switchTo=function(name){this.anim=name;plays++;};
+      pet.pet.workStatusTexts=[[],['Still working']];
+      let raw={state:'working',task:null,ts:123,fatfishManaged:true,fatfishBubbleMuted:false,fatfishWorkingQuota:'Codex 7天还剩 24%'};
       window.fetch=async()=>({ok:true,json:async()=>raw});
       const stripped=await S.fetchWorkStatus('fixture');
       installWorkStatusTransport();
       const poll=new Function('S','sprites','WORK_STATUS_URL','setTimeout',`let workTick=0;${loop}return workLoop;`)(S,[pet],'fixture',()=>{});
       await poll();await poll();const restored=pet.workState;
+      const ordinary=pet.workText,previousPlays=plays;
+      raw={...raw,ts:123.5,fatfishWorkingQuota:'Codex 7天还剩 23%'};await poll();
+      const updated={text:pet.workText,replayed:plays!==previousPlays};
       raw={...raw,task:'Completed earlier',ts:124,fatfishNoticeUntil:Date.now()+300000};await poll();
       window.transportPet=pet;
       const held={state:pet.workState,text:pet.bubble.textContent,on:pet.workOn};
       raw={...raw,state:'waiting',task:'Need input',ts:125,fatfishAttentionRevision:9};await poll();pet.onClick();pet.handleEnded();
       const waiting={revision:pet.__fatfishWork.attention,anim:pet.anim,on:pet.workOn};
       raw={state:'working',task:'Completed earlier',ts:126,fatfishManaged:true,fatfishNoticeUntil:Date.now()+300001};await poll();
-      return {oldDecoderDroppedMetadata:stripped.fatfishManaged===undefined,restored,held,waiting};
+      return {oldDecoderDroppedMetadata:stripped.fatfishManaged===undefined,restored,ordinary,updated,held,waiting};
     },loop);
     assert.equal(result.oldDecoderDroppedMetadata,true);assert.equal(result.restored,'working');
+    assert.equal(result.ordinary,'Still working\nCodex 7天还剩 24%');
+    assert.deepEqual(result.updated,{text:'Still working\nCodex 7天还剩 23%',replayed:false});
     assert.deepEqual(result.held,{state:'working',text:'Completed earlier',on:true});assert.deepEqual(result.waiting,{revision:9,anim:'pace',on:false});
     await page.clock.fastForward(299000);assert.equal(await page.evaluate(()=>transportPet.workOn),true);
-    await page.clock.fastForward(1001);assert.equal(await page.evaluate(()=>transportPet.workText),null);
+    await page.clock.fastForward(1001);assert.equal(await page.evaluate(()=>transportPet.workText),'Still working');
   }finally{await browser.close();}
 });
 
@@ -62,7 +68,7 @@ test('desktop queued work keeps its unread bubble, restores after interaction, a
     const page=await browser.newPage();await page.clock.install();
     await page.setContent(readFileSync(join(helper,'index.html'),'utf8').replace(/<meta\b[^>]*>/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
     for(const name of ['shared-core.js','constants.js','sprite.js','events.js'])await page.addScriptTag({path:join(helper,name)});
-    await page.addScriptTag({content:`${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
+    await page.addScriptTag({content:`${fatfishWorkText.toString()}\n${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
     const result=await page.evaluate(()=>{
       config={physics:S.DEFAULT_PHYSICS};window.petBridge={setBounds(){},setInteractive(){},setInputBusy(){},reportFlight(){}};
       const pet=new PetSprite({id:'main',name:'test',size:240,workStatusEnabled:true,position:{corner:'bottom-right',marginX:20,marginY:20},animations:{idle:['idle'],turn:[],drag:['drag'],clicks:['response'],events:{workStatus:['thinking',['work-a','work-b'],'result',['angry','wave','pace'],'success','error']},moves:{actions:[]}},animationWeights:{}});
@@ -123,7 +129,7 @@ test('real sprite holds explicit completion without looping success, ordinary te
     const page=await browser.newPage();await page.clock.install();
     await page.setContent(readFileSync(join(helper,'index.html'),'utf8').replace(/<meta\b[^>]*>/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
     for(const name of ['shared-core.js','constants.js','sprite.js','events.js'])await page.addScriptTag({path:join(helper,name)});
-    await page.addScriptTag({content:`${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
+    await page.addScriptTag({content:`${fatfishWorkText.toString()}\n${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
     await page.evaluate(()=>{
       config={physics:S.DEFAULT_PHYSICS};window.petBridge={setBounds(){},setInteractive(){},setInputBusy(){},reportFlight(){}};
       window.heldPet=new PetSprite({id:'main',name:'test',size:240,workStatusEnabled:true,position:{corner:'bottom-right',marginX:20,marginY:20},animations:{idle:['idle'],turn:[],drag:[],clicks:[],events:{whisper:['talk'],workStatus:['thinking','working','result','waiting','success','error']},moves:{actions:[]}},animationWeights:{}});
@@ -158,7 +164,7 @@ test('actual patched Web effect separates work and speech, acknowledges waiting 
   const end=patched.indexOf('}, [workStatusTick]);',start);
   assert.ok(start>0&&end>start);
   let clock=1000,durations=[],values=[],animations=[],text;
-  const ctx={fatfishWorkView,fatfishCalmWaiting,console:{log(){},error(){}},Date:class extends Date{constructor(){super(clock);}static now(){return clock;}},
+  const ctx={fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,console:{log(){},error(){}},Date:class extends Date{constructor(){super(clock);}static now(){return clock;}},
     cfg:{workStatusEnabled:true,workStatusTexts:[['thinking'],['busy'],['result'],['waiting'],['done'],['error']]},
     petAnims:{idle:['idle'],events:{workStatus:['thinking',['working-a','working-b'],'result',['angry','wave','pace'],'success','error']}},
     WORK_STATUS_INDEX:{thinking:0,working:1,result:2,waiting:3,success:4,error:5},
@@ -181,6 +187,10 @@ test('actual patched Web effect separates work and speech, acknowledges waiting 
   ctx.dragRef.current.active=false;click(ctx);assert.equal(ctx.prevWorkStateRef.fatfish.dismissed,302000);
   assert.equal(text,'busy','click restores current work immediately, without a progress tick');
   run(ctx.workStatus);assert.equal(values.at(-1),true);assert.equal(text,'busy');assert.equal(animations.length,n);
+  run({state:'working',task:null,fatfishManaged:true,fatfishWorkingQuota:'Codex 7天还剩 24%'});
+  assert.equal(text,'busy\nCodex 7天还剩 24%');
+  run({...ctx.workStatus,fatfishWorkingQuota:'Codex 7天还剩 23%'});
+  assert.equal(text,'busy\nCodex 7天还剩 23%');assert.equal(animations.length,n,'quota refresh is text-only');
   run({state:'working',task:null,fatfishManaged:true,fatfishBubbleMuted:true});assert.equal(values.at(-1),false);assert.equal(animations.length,n);
   run({state:'waiting',task:'come back',fatfishManaged:true,fatfishAttentionRevision:1});click(ctx);run(ctx.workStatus);assert.equal(values.at(-1),false);
   const resumeStart=patched.indexOf('const resumeWorkStatusAnim = () => {'),resumeEnd=patched.indexOf('const handleEnded =',resumeStart);
@@ -203,7 +213,7 @@ test('manual reply becomes visible when external work yields, then work resumes'
     const page=await browser.newPage();
     await page.setContent(readFileSync(join(helper,'index.html'),'utf8').replace(/<meta\b[^>]*>/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
     for(const name of ['shared-core.js','constants.js','sprite.js','events.js'])await page.addScriptTag({path:join(helper,name)});
-    await page.addScriptTag({content:`${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
+    await page.addScriptTag({content:`${fatfishWorkText.toString()}\n${fatfishWorkView.toString()}\n${fatfishCalmWaiting.toString()}\n(${installCompletionBubble.toString()})();`});
     const result=await page.evaluate(snapshots=>{
       config={physics:S.DEFAULT_PHYSICS};
       window.petBridge={setBounds(){},setInteractive(){},setInputBusy(){},reportFlight(){}};

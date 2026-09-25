@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
@@ -5,7 +6,7 @@ import {join} from 'node:path';
 import {chromium} from '@playwright/test';
 import {THEATER_EXPRESSIONS,THEATER_TOOLS,decodeTheaterReply,decodeTheaterPlan,dialogueExpression} from '../src/theater.mjs';
 import {ordinaryQuotaWindows} from '../src/codex-quota.mjs';
-import {fatfishExpressionClip,installExpressionUI,fatfishWorkView,fatfishCalmWaiting,installCompletionBubble,fatfishWorkMetadata} from '../src/touch.mjs';
+import {fatfishExpressionClip,installExpressionUI,fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,installCompletionBubble,fatfishWorkMetadata} from '../src/touch.mjs';
 import {patchTouchAsset} from '../src/touch-patch.mjs';
 import {DIALOGUE_ALIASES} from '../scripts/configure-dialogue-animations.mjs';
 
@@ -61,7 +62,7 @@ test('real desktop dialogue callback, broadcast and work player preserve physics
       const path='runtime/electron-helper/'+name;
       await page.addScriptTag({content:name==='constants.js'?clean(path):patchTouchAsset(path,clean(path),'')});
     }
-    await page.addScriptTag({content:[fatfishExpressionClip,fatfishWorkView,fatfishCalmWaiting,installCompletionBubble,installExpressionUI].map(f=>f.toString()).join('\n')+'\ninstallCompletionBubble();installExpressionUI();'});
+    await page.addScriptTag({content:[fatfishExpressionClip,fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,installCompletionBubble,installExpressionUI].map(f=>f.toString()).join('\n')+'\ninstallCompletionBubble();installExpressionUI();'});
     const result=await page.evaluate(animations=>{
       config={physics:S.DEFAULT_PHYSICS};window.petBridge={setBounds(){},setInteractive(){},setInputBusy(){},reportFlight(){}};
       const pet=new PetSprite({id:'main',name:'test',size:240,workStatusEnabled:true,balanceEnabled:true,position:{corner:'bottom-right',marginX:20,marginY:20},animations,animationWeights:{}});
@@ -103,7 +104,7 @@ test('real desktop dialogue callback, broadcast and work player preserve physics
 test('actual Web whisper and work effects select once, retain images, skip physical interaction and keep work state',()=>{
   const code=patchTouchAsset('lib/client.js',clean('lib/client.js'),'');
   let clock=1000,plays=[],image,text,bubble;
-  const ctx={fatfishExpressionClip:(e,a)=>fatfishExpressionClip(e,a,clock),fatfishWorkView,fatfishCalmWaiting,petAnims:animations,Date:class extends Date{constructor(){super(clock);}static now(){return clock;}},
+  const ctx={fatfishExpressionClip:(e,a)=>fatfishExpressionClip(e,a,clock),fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,petAnims:animations,Date:class extends Date{constructor(){super(clock);}static now(){return clock;}},
     cfg:{id:'main'},console:{log(){},error(){}},animRef:{current:'idle'},dragRef:{current:{active:false,dragging:false}},throwRef:{current:null},
     whisperBubbleTimerRef:{current:null},window:{clearTimeout(){},setTimeout(){return 1;}},BUBBLE_DURATION_MS:10000,
     setWhisperText:v=>text=v,setWhisperImage:v=>image=v,setWhisperBubbleOn:v=>bubble=v,setOnce(){},setAnim:v=>plays.push(v),stopMove(){},pick:p=>p[0],pickSlot:s=>Array.isArray(s)?s[0]:s};

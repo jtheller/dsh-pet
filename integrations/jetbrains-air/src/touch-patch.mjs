@@ -1,6 +1,6 @@
 import {installInputOverlay} from './input-overlay.mjs';
 import {installDesktopHealth} from './desktop-health.mjs';
-import {fatfishWorkView,fatfishCalmWaiting,fatfishWorkMetadata,fatfishExpressionClip} from './touch.mjs';
+import {fatfishWorkText,fatfishWorkView,fatfishCalmWaiting,fatfishWorkMetadata,fatfishExpressionClip} from './touch.mjs';
 export const TOUCH_MARKER='// FATFISH TOUCH v1';
 function replaceOnce(code,anchor,replacement){
   if(code.split(anchor).length!==2)throw new Error('Touch patch anchor mismatch: '+anchor.slice(0,70));
@@ -35,7 +35,7 @@ export function patchTouchAsset(name,code,runtime){
   if(name==='runtime/electron-helper/events.js')return TOUCH_MARKER+'\n'+replaceOnce(code,"this.showWhisper(d.text, typeof d.image === 'string' ? d.image : '');","this.showWhisper(d.text, typeof d.image === 'string' ? d.image : '', d.fatfishExpression);");
   if(name==='lib/client.js' || name==='runtime/electron-helper/renderer.js'){
     if(name==='lib/client.js'){
-      code=fatfishExpressionClip.toString()+'\n'+fatfishWorkMetadata.toString()+'\n'+fatfishWorkView.toString()+'\n'+fatfishCalmWaiting.toString()+'\n'+code;
+      code=fatfishWorkText.toString()+'\n'+fatfishExpressionClip.toString()+'\n'+fatfishWorkMetadata.toString()+'\n'+fatfishWorkView.toString()+'\n'+fatfishCalmWaiting.toString()+'\n'+code;
       code=replaceOnce(code,'onReply: (reply, image) => {','onReply: (reply, image, fatfishExpression) => {');
       code=replaceOnce(code,'triggerWhisper(reply, image);','triggerWhisper(reply, image, fatfishExpression);');
       code=replaceOnce(code,'triggerWhisper(d.text, typeof d.image === "string" ? d.image : void 0);','triggerWhisper(d.text, typeof d.image === "string" ? d.image : void 0, d.fatfishExpression);');
@@ -75,13 +75,13 @@ export function patchTouchAsset(name,code,runtime){
           const clip=fatfishExpressionClip(expression,petAnims,Date.now(),cfg.balanceEnabled);
           if(clip && view.state!=='waiting' && !dragRef.current.active && !dragRef.current.dragging && throwRef.current===null){stopMove();setOnce(true);setAnim(clip);setSeq(s=>s+1);}
         }
-        setWorkText(view.task ?? memory.defaultText ?? null);
+        setWorkText(fatfishWorkText(view,memory.defaultText));
         setWorkBubbleOn(view.visible);
         if (workBubbleTimerRef.current !== null) window.clearTimeout(workBubbleTimerRef.current);
         workBubbleTimerRef.current = view.visible && view.until > Date.now()
           ? window.setTimeout(() => {
             const current=fatfishWorkView(memory.snapshot,memory,Date.now());
-            setWorkText(current.task ?? memory.defaultText ?? null);setWorkBubbleOn(current.visible);
+            setWorkText(fatfishWorkText(current,memory.defaultText));setWorkBubbleOn(current.visible);
           }, Math.min(300000, view.until - Date.now())) : null;
         return;
       }
@@ -101,7 +101,7 @@ export function patchTouchAsset(name,code,runtime){
             if (waiting || memory.until > Date.now()) {
               if (workBubbleTimerRef.current !== null) window.clearTimeout(workBubbleTimerRef.current);
               const view=fatfishWorkView(memory.snapshot,memory,Date.now());
-              workBubbleTimerRef.current = null;setWorkText(view.task ?? memory.defaultText ?? null);setWorkBubbleOn(view.visible);
+              workBubbleTimerRef.current = null;setWorkText(fatfishWorkText(view,memory.defaultText));setWorkBubbleOn(view.visible);
             }
           }`);
       code=replaceOnce(code,'const ws = workStatusRef.current;\n\t\t\tif (!ws',`const ws = workStatusRef.current;
