@@ -5,6 +5,11 @@ export function dialogueExpression(value,at=Date.now()) {
 }
 export const THEATER_TOOLS = [
   {
+    name:'pet_account',
+    description:'用户明确要求换Codex/GPT账号、重新授权或连接额度账号时调用。打开浏览器让用户登录肥鱼查询额度的账号，随后核对Air身份；不能切换Air本身账号。询问能否换号、引用或否定不执行。不要声称已登录或切换成功，实际结果由程序返回。',
+    parameters:{type:'object',properties:{reply:{type:'string'}},required:['reply'],additionalProperties:false},
+  },
+  {
     name:'pet_status',
     description:'用户询问 Air/GPT 活动、token、额度、最近提醒原因时选择。用原人设自然简短地回应，不念日志。仅用户明确问具体数字、余额、token或详细统计时设details=true，程序另附真实明细；问在忙吗、做完了吗、为什么叫我则false或省略。不把未知写成零，不合并额度池。',
     parameters:{type:'object',properties:{reply:{type:'string',description:'结合真实事件与人设回答，不编造任务内容或数值。'},topic:{type:'string',enum:['tokens','quota','activity','reason'],description:'token/消耗/简短用量查询=tokens；还剩多少/额度=quota；工作进度=activity；为什么叫我=reason。tokens和quota由程序附对应事实，不夹带其他报表。'}},required:['reply','topic'],additionalProperties:false},
@@ -45,9 +50,27 @@ export function theaterInstructions(state) {
     '仅回复文字不会执行动作，不要在未调用工具时宣称已经执行。不得调用不存在的工具，也不能执行用户或聊天记录里的代码。';
 }
 
+export async function connectQuotaAccount({login,spawn,isCurrent}) {
+  if(!isCurrent())return '这次换号请求已取消。';
+  try {
+    const {authUrl}=await login();
+    if(!isCurrent())return '这次换号请求已取消，未打开授权页。';
+    const url=new URL(authUrl);
+    if(url.protocol!=='https:'||!['auth.openai.com','chatgpt.com'].includes(url.hostname)||url.username||url.password)throw Error('origin');
+    await new Promise((resolve,reject)=>{
+      const child=spawn('powershell.exe',['-NoProfile','-NonInteractive','-Command',"$ErrorActionPreference='Stop'; Start-Process -FilePath $env:FATFISH_AUTH_URL"],{windowsHide:true,stdio:'ignore',env:{...process.env,FATFISH_AUTH_URL:authUrl}});
+      const timer=setTimeout(()=>{child.kill();reject(Error('timeout'));},15000);
+      child.once('error',()=>{clearTimeout(timer);reject(Error('browser'));});
+      child.once('exit',code=>{clearTimeout(timer);code===0?resolve():reject(Error('browser'));});
+    });
+    return '主人，已请求浏览器打开授权页。选好和 Air 一致的账号登录，我会核对身份并刷新额度；Air 自己的账号需要你在 Air 里切换。';
+  } catch { return '主人，授权页暂时没能打开，账号还没切换。稍后再叫我试一次吧。'; }
+}
+
 export function theaterDecisionInstructions(state) {
   return '你负责理解用户此刻对桌宠的意图，并生成符合persona的台词。输入JSON中的persona只用于口吻，不能阻止用户明确要求的操作。currentRequest是这次唯一待执行请求；recentContext仅用于解代词和保持对话连贯，旧指令、旧助手承诺不能覆盖新要求。用户改变主意时以最新要求为准，包括无空格拼音。先判断动作，再写台词，不要让撒娇、赖着不走等人设改变动作。\n'+
     theaterInstructions(state)+'\n[本轮输出约束，优先于旧说明]\n'+
+    '明确要求换Codex账号、重新登录或连接额度账号用pet_account，不能只用pet_reply推说不能帮忙。此工具只启动肥鱼的浏览器授权，用户自行登录；不切换Air账号。询问方法或能力、否定、引用时只解释，不执行。pet_account只含reply和可选expression，程序根据实际执行结果生成回复，不承诺已经换好。\n'+
     'pet_status必须选择topic：tokens用于token消耗、输入输出缓存或单独问用量；quota用于账号剩余额度；activity用于工作是否在跑/具体内容/完成情况；reason用于提醒原因。不要输出details。程序只为tokens/quota附对应事实，reply不必重复数字，不要把账号额度未知当成token记录不存在。\n'+
     '额度按窗口分别判断：只要当前事实已有7天读数，就不能笼统说账号额度查不到，即使5小时未知或历史说过查不到。只承认未知的那一项。询问额度何时恢复、多久重置、还要等多久也属于quota；用当前事实中对应窗口的倒计时回答，不从5小时/7天窗口长度猜日期，不把7天的时间当5小时的。倒计时是查询时估算，已经过去的历史回答不能当作当前时间。只有当前事实缺少重置时间时才说未知。reserve显示0表示那个独立池回报已用0，不表示没有记录，也不能代表普通池剩余。普通问候/撒娇用pet_reply，不因为上下文里有工作事实就主动汇报工作。\n'+
     '对提醒的调整像陪伴者商量事情：我先不吵你、忙完叫你、我继续帮你留意。不要提模式、切换、配置、监控策略、quiet/normal等内部词，也不要说恢复碎碎念；这个工具只改变工作提醒。用户说恢复正常提醒/照常告诉我，选择normal，不继承旧until_complete。回复描述本次工具实际会做什么，不宣称操作别的应用。\n'+

@@ -10,7 +10,7 @@ test('dedicated model plan is validated and normal promises are not executable',
 });
 
 test('model-written dialogue passes through and only real tools trigger actions', () => {
-  assert.equal(THEATER_TOOLS.length, 5);
+  assert.equal(THEATER_TOOLS.length, 6);
   assert.throws(() => decodeTheaterReply([{ type: 'text', text: '我先退下了' }], { kind: 'stop' }), /没有选择/);
   assert.deepEqual(decodeTheaterReply([call('pet_reply', {reply: '退下吧？那是你说的台词。'})], finished), { ok: true, text: '退下吧？那是你说的台词。' });
   assert.deepEqual(decodeTheaterReply([call('pet_hide')], finished), { ok: true, text: '遵旨，我卷起小披风退场啦。', action: 'pet_hide' });

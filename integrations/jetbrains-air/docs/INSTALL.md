@@ -49,7 +49,7 @@ Air 工作状态无需额外模型账号连接。要显示 Codex 额度，在 Ai
 
 在浏览器里完成独立授权；身份匹配且窗口有效才显示额度。此辅助脚本和 `toggle-pet.ps1` 使用上述启动日志、127.0.0.1 和 3080；自定义端口需要自行调整。授权不是启动桌宠的必要步骤。
 
-## 更新到 0.1.4
+## 更新到 0.1.5
 
 退出 DSH，将新版文件覆盖到原扩展目录，保留 `.local` 安装清单和恢复原件。运行 `npm run prepare:upstream`、`npm run install:local`、`npm run install:touch`、`npm run status`，再启动 DSH。不要删除旧目录后安装到新路径。
 

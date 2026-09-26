@@ -13,12 +13,12 @@ test('patch rejects unsupported input without producing output', () => {
 test('actual patched chat injects facts, applies only current policies, preserves normal chat',async()=>{
   const patched=buildPatch(readFileSync(target,'utf8'),'');
   const start=patched.indexOf('const chatWithPet =');const end=patched.indexOf('\n\tconst effectivePetList',start);
-  const keys=['theater','companion','withMemoryLock','readAllConfig','configPaths','memoryRounds','findPetInstance','petSystemPrompt','readMemePool','PACKAGE_ROOT_ASSETS','readMemory','writeMemory','ctx','generateChat','usageMonitor','codexQuota','dialogueExpression'];
+  const keys=['theater','companion','withMemoryLock','readAllConfig','configPaths','memoryRounds','findPetInstance','petSystemPrompt','readMemePool','PACKAGE_ROOT_ASSETS','readMemory','writeMemory','ctx','generateChat','usageMonitor','codexQuota','dialogueExpression','connectQuotaAccount','spawn'];
   const factory=new Function(...keys,patched.slice(start,end)+'\nreturn chatWithPet;');
   const changes=[],states=[];let mem={},result={ok:true,text:'本鱼帮你看看。',action:'pet_status',details:true};
   const director=createTheaterDirector({hide:async()=>{},show:async()=>{}});
   const reads=[],interruptions=[],quotaExpression={kind:'quota',slot:4,at:Date.now()};
-  const chat=factory(director,{interrupt:duration=>interruptions.push(duration),context:()=>({lastNotice:{event:{kind:'completed'}}}),configure:p=>changes.push(p)},fn=>fn(),()=>({main:{pets:[{id:'main',display:'desktop'}]}}),{},()=>5,()=>({conf:{},entry:'main'}),()=> 'persona',()=>[],null,async()=>mem,async value=>mem=value,{},async(...args)=>{states.push(args[5]);return {...result};},{summary:()=> 'FACTS: remaining unknown'},{refresh:async force=>reads.push(force),presentation:()=>quotaExpression},dialogueExpression);
+  const chat=factory(director,{interrupt:duration=>interruptions.push(duration),context:()=>({lastNotice:{event:{kind:'completed'}}}),configure:p=>changes.push(p)},fn=>fn(),()=>({main:{pets:[{id:'main',display:'desktop'}]}}),{},()=>5,()=>({conf:{},entry:'main'}),()=> 'persona',()=>[],null,async()=>mem,async value=>mem=value,{},async(...args)=>{states.push(args[5]);return {...result};},{summary:()=> 'FACTS: remaining unknown'},{refresh:async force=>reads.push(force),presentation:()=>quotaExpression},dialogueExpression,async ({isCurrent})=>{assert.equal(isCurrent(),true);return 'Authorization started';},()=>{});
   const reply=await chat('main','额度如何');assert.ok(reply.reply.endsWith('\n\nFACTS: remaining unknown'));assert.match(states[0],/completed/);assert.match(states[0],/remaining unknown/);
   assert.deepEqual(reads,[true]);assert.deepEqual(reply.fatfishExpression,quotaExpression);
   assert.deepEqual(interruptions,[undefined,10000],'reply reading window matches the actual bubble, instead of leaving a 50-second gap');
@@ -31,6 +31,7 @@ test('actual patched chat injects facts, applies only current policies, preserve
   result={ok:true,text:'Thanks!',expression:'shy',image:'meme'};
   const expressive=await chat('main','you are cute');assert.equal(expressive.fatfishExpression.slot,1);assert.equal(expressive.image,'meme');
   assert.ok(patched.includes('fatfishExpression:hit.fatfishExpression'));
+  result={ok:true,text:'incorrect success',action:'pet_account'};assert.equal((await chat('main','switch account')).reply,'Authorization started');
   director.dispose();
 });
 test('patched generateChat sends real tool schemas and decodes streamed tool-only reply', { skip: !existsSync(target) }, async () => {
@@ -47,7 +48,7 @@ test('patched generateChat sends real tool schemas and decodes streamed tool-onl
   const generate = new Function('extractChatImage', 'imageInstruction','BlockAssembler', 'supportsReasoningOff', 'createUserMessage', 'createAssistantMessage', 'ReasoningEffortId', 'TIMEOUT_MS', 'THEATER_TOOLS', 'theaterDecisionInstructions', 'decodeTheaterReply', 'decodeTheaterPlan', patched.slice(start, end) + '\nreturn generateChat;')(
     imageHelpers.extractChatImage, imageHelpers.imageInstruction, Assembler, async () => false, x => x, x => x, x => x, 60000, THEATER_TOOLS, theaterDecisionInstructions, decodeTheaterReply, decodeTheaterPlan);
   const ctx = { agentDefaultModel: { currentSelection: () => ({ provider: 'test', model: 'test' }) }, llm: { async *stream(options) {
-    assert.deepEqual(options.tools.map(x => x.name), ['pet_status','pet_notify','pet_reply', 'pet_hide', 'pet_stay']);
+    assert.deepEqual(options.tools.map(x => x.name), ['pet_account','pet_status','pet_notify','pet_reply', 'pet_hide', 'pet_stay']);
     assert.match(options.system, /显示中/);
     assert.equal(options.messages.length,1);
     const request=JSON.parse(options.messages[0].content[0].text);

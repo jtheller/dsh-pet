@@ -8,9 +8,9 @@
 
 首版支持 **Windows x64、Node.js 22+、dsh-pet 0.2.11、DSH 0.1.5-rc.1**。Air 联动使用本地日志；Codex 支持完成事件与用量，其他 Agent 目前只提供可观察到的工作/输入状态。
 
-从 [Releases](https://github.com/jtheller/fatfish-air/releases) 下载 `fatfish-air-0.1.4-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
+从 [Releases](https://github.com/jtheller/fatfish-air/releases) 下载 `fatfish-air-0.1.5-windows.zip`，解压到固定目录，按[安装与撤销](docs/INSTALL.md)操作。也可在本仓库的 `integrations/jetbrains-air` 内执行相同命令。ZIP 是扩展源码与安装工具，不是独立 EXE；原版插件和动画由固定 npm 版本安装。
 
-当前版本 **0.1.4**：Air 普通工作气泡附加 Codex 剩余额度，约每分钟刷新；聊天、催促和完成报告的生命周期不变。继续适配 dsh-pet 0.2.11，尚未适配上游新发布的 0.2.12。
+当前版本 **0.1.5**：对肥鱼说“帮我换 Codex 账号”即可启动额度账号的浏览器授权，登录后核对 Air 身份并刷新额度；Air 自身账号仍需在 Air 中切换。继续适配 dsh-pet 0.2.11，尚未适配 0.2.12。
 
 ## 能做什么
 
